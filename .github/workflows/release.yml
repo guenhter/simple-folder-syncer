@@ -1,0 +1,26 @@
+---
+name: Rust Build and MSI Release
+
+on:
+  push:
+    branches:
+      - main
+
+jobs:
+  build:
+    name: Build with Cargo
+    runs-on: windows-latest
+
+    steps:
+      - uses: actions/checkout@v2
+      - uses: dtolnay/rust-toolchain@stable
+      - name: Build release
+        run: cargo build --release
+      - name: Install WiX
+        run: dotnet tool install --global wix
+      - name: Create MSI
+        run: wix build .\package.wxs -o SimpleFolderSyncer.msi
+      - name: Upload WiX Installer
+        uses: actions/upload-artifact@v4
+        with:
+          path: SimpleFolderSyncer.msi

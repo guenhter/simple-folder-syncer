@@ -1,0 +1,15 @@
+<Wix xmlns="http://wixtoolset.org/schemas/v4/wxs">
+<Package Name="Simple Folder Syncer" Manufacturer="Grill Günther" UpgradeCode="9e914e0d-014b-4a92-a147-755ad34dfc26" Version="0.1">
+    <MediaTemplate EmbedCab="yes" />
+
+    <StandardDirectory Id="ProgramFilesFolder">
+        <Directory Id="SyncerFolder" Name="Simple Folder Syncer" />
+    </StandardDirectory>
+
+    <Feature Id="Main">
+        <Component Directory="SyncerFolder">
+            <File Source="target\\release\\simple-folder-syncer.exe" />
+        </Component>
+    </Feature>
+</Package>
+</Wix>

@@ -1,0 +1,25 @@
+[package]
+description = "Small folder mirror tool for Windows using robocopy under the hood"
+name = "simple-folder-syncer"
+version = "0.1.0"
+authors = ["Günther Grill <grill.guenther@gmail.com>"]
+license = "MIT"
+repository = "https://github.com/guenhter/robocopy-folder-mirror"
+categories = ["command-line-utilities"]
+keywords = ["backup", "robocopy", "sync", "mirror"]
+readme = "README.md"
+edition = "2021"
+rust-version = "1.79.0"
+
+[dependencies]
+anyhow = "1.0.86"
+assertor = "0.0.2"
+home = "0.5.9"
+serde = { version = "1.0.203", features = ["derive"] }
+serde_yaml = "0.9.34"
+tempfile = "3.10.1"
+walkdir = "2.5.0"
+windows-sys = { version = "0.52.0", features = [
+    "Win32_System_Threading",
+    "Win32_Storage_FileSystem",
+] }
