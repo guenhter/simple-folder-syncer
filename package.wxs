@@ -1,15 +1,29 @@
 <Wix xmlns="http://wixtoolset.org/schemas/v4/wxs">
-<Package Name="Simple Folder Syncer" Manufacturer="Grill Günther" UpgradeCode="9e914e0d-014b-4a92-a147-755ad34dfc26" Version="0.1">
-    <MediaTemplate EmbedCab="yes" />
+    <Package Name="Simple Folder Syncer" Manufacturer="Grill Günther" UpgradeCode="9e914e0d-014b-4a92-a147-755ad34dfc26" Version="0.1">
+        <Icon Id="icon.ico" SourceFile="resources\icon.ico"/>
+        <Property Id="ARPPRODUCTICON" Value="icon.ico" />
+        <Property Id="ARPNOMODIFY" Value="no" Secure="yes" />
 
-    <StandardDirectory Id="ProgramFilesFolder">
-        <Directory Id="SyncerFolder" Name="Simple Folder Syncer" />
-    </StandardDirectory>
+        <MediaTemplate EmbedCab="yes" />
 
-    <Feature Id="Main">
-        <Component Directory="SyncerFolder">
-            <File Source="target\\release\\simple-folder-syncer.exe" />
-        </Component>
-    </Feature>
-</Package>
+        <StandardDirectory Id="ProgramFiles64Folder">
+            <Directory Id="SyncerFolder" Name="Simple Folder Syncer" />
+        </StandardDirectory>
+
+        <Feature Id="Main">
+            <Component Directory="SyncerFolder" Guid="ef88aca5-ca0f-49b3-a95b-385d7c9a2965">
+                <File Source="target\\release\\simple-folder-syncer.exe" />
+                <File Id="InstallScheuduleCmd" Source="install-schedule.bat" />
+                <File Id="UninstallScheuduleCmd" Source="uninstall-schedule.bat" />
+            </Component>
+        </Feature>
+
+        <CustomAction Id='InstallSchedule' FileRef='InstallScheuduleCmd' ExeCommand='' Execute='immediate' Impersonate='no' Return='check' />
+        <CustomAction Id='UninstallSchedule' FileRef='UninstallScheuduleCmd' ExeCommand='' Execute='immediate' Impersonate='no' Return='check' />
+
+        <InstallExecuteSequence>
+            <Custom Action="InstallSchedule" After="InstallFinalize" Condition="NOT Installed"/>
+            <Custom Action="UninstallSchedule" Before="InstallFinalize" Condition='Installed AND ( REMOVE = "ALL" OR AI_INSTALL_MODE = "Remove" ) AND NOT UPGRADINGPRODUCTCODE'/>
+        </InstallExecuteSequence>
+    </Package>
 </Wix>

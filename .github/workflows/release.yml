@@ -19,7 +19,7 @@ jobs:
       - name: Install WiX
         run: dotnet tool install --global wix
       - name: Create MSI
-        run: wix build .\package.wxs -o SimpleFolderSyncer.msi
+        run: wix build .\package.wxs -o SimpleFolderSyncer.msi -arch x64
       - name: Upload WiX Installer
         uses: actions/upload-artifact@v4
         with:

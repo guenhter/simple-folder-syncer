@@ -33,6 +33,9 @@ cargo wix
 
 
 ```ps1
+# Building the MSI
+wix build .\package.wxs -o my.msi -arch x64
+
 # Install an MSI and create the log for the installation process
 msiexec /i my.msi /l*v install.log
 
