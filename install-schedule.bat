@@ -1,6 +1,6 @@
 @echo off
 
-set "BatchFilePath=%programfiles%\Simple Folder Syncer\simple-folder-syncer.exe"
+set "BatchFilePath='%programfiles%\Simple Folder Syncer\simple-folder-syncer.exe'"
 
 set "TaskName=Simple Folder Syncer"
 set "TaskDescription=Run my batch file daily"
