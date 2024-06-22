@@ -1,6 +1,6 @@
 # Simple Folder Syncer
 
-Currently workin progress. Updates to the Docs will follow...
+The 
 
 ## Prerequisites
 

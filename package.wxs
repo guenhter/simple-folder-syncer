@@ -13,13 +13,14 @@
         <Feature Id="Main">
             <Component Directory="SyncerFolder" Guid="ef88aca5-ca0f-49b3-a95b-385d7c9a2965">
                 <File Source="target\\release\\simple-folder-syncer.exe" />
+                <File Source="reconnect-netdrive.bat" />
                 <File Id="InstallScheuduleCmd" Source="install-schedule.bat" />
                 <File Id="UninstallScheuduleCmd" Source="uninstall-schedule.bat" />
             </Component>
         </Feature>
 
-        <CustomAction Id='InstallSchedule' FileRef='InstallScheuduleCmd' ExeCommand='' Execute='immediate' Impersonate='no' Return='check' />
-        <CustomAction Id='UninstallSchedule' FileRef='UninstallScheuduleCmd' ExeCommand='' Execute='immediate' Impersonate='no' Return='ignore' />
+        <CustomAction Id='InstallSchedule' FileRef='InstallScheuduleCmd' ExeCommand='' Execute='immediate' Impersonate='yes' Return='check' />
+        <CustomAction Id='UninstallSchedule' FileRef='UninstallScheuduleCmd' ExeCommand='' Execute='immediate' Impersonate='yes' Return='ignore' />
 
         <InstallExecuteSequence>
             <Custom Action="InstallSchedule" After="InstallFinalize" Condition="NOT Installed"/>
