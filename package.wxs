@@ -19,7 +19,7 @@
         </Feature>
 
         <CustomAction Id='InstallSchedule' FileRef='InstallScheuduleCmd' ExeCommand='' Execute='immediate' Impersonate='no' Return='check' />
-        <CustomAction Id='UninstallSchedule' FileRef='UninstallScheuduleCmd' ExeCommand='' Execute='immediate' Impersonate='no' Return='check' />
+        <CustomAction Id='UninstallSchedule' FileRef='UninstallScheuduleCmd' ExeCommand='' Execute='immediate' Impersonate='no' Return='ignore' />
 
         <InstallExecuteSequence>
             <Custom Action="InstallSchedule" After="InstallFinalize" Condition="NOT Installed"/>
