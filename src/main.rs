@@ -12,53 +12,53 @@ use windows_sys::Win32::{
     Storage::FileSystem::FILE_ATTRIBUTE_HIDDEN, System::Threading::CREATE_NO_WINDOW,
 };
 
-const DEFAULT_CONFIG_FILE_NAME: &str = "backup_config.yaml";
+const DEFAULT_CONFIG_FILE_NAME: &str = "folder_sync_config.yaml";
 
 #[derive(Serialize, Deserialize, PartialEq, Debug, Clone)]
 struct Configuration {
     source: String,
     target: String,
-    create_last_backup_result_file: bool,
-    ignore_root_source_hidden_entries: bool,
-    additional_ignores: Vec<String>,
+    create_last_sync_result_file: bool,
+    exclude_root_source_hidden_entries: bool,
+    exclude_paths: Vec<String>,
 }
 
 fn main() -> anyhow::Result<()> {
     let home_dir = find_config_path().unwrap();
-    run_backup(&home_dir)?;
+    run_folder_sync(&home_dir)?;
 
     Ok(())
 }
 
-fn run_backup(config_path: &Path) -> anyhow::Result<()> {
+fn run_folder_sync(config_path: &Path) -> anyhow::Result<()> {
     let config = read_config(config_path)?;
 
-    let output = run_backup_with_config(config.clone())?;
+    let output = run_folder_sync_with_config(config.clone())?;
 
-    if config.create_last_backup_result_file {
+    if config.create_last_sync_result_file {
         let target = path::absolute(PathBuf::from(config.target))?;
-        write_backup_result(&target, &output)?;
+        write_folder_sync_result(&target, &output)?;
     }
 
     Ok(())
 }
 
-fn run_backup_with_config(config: Configuration) -> anyhow::Result<String> {
+fn run_folder_sync_with_config(config: Configuration) -> anyhow::Result<String> {
     let source = path::absolute(config.source)?;
     let target = path::absolute(config.target)?;
 
-    let additional_ignores: Vec<PathBuf> = config
-        .additional_ignores
+    let additional_excludes: Vec<PathBuf> = config
+        .exclude_paths
         .into_iter()
         .map(path::absolute)
         .collect::<Result<Vec<PathBuf>, _>>()?;
 
-    let all_ignore_paths = collect_ignore_paths(
+    let all_exclude_paths = collect_exclude_paths(
         &source,
-        config.ignore_root_source_hidden_entries,
-        additional_ignores,
+        config.exclude_root_source_hidden_entries,
+        additional_excludes,
     )?;
-    let mut exclude_args = build_robocopy_exclude_arguments(&all_ignore_paths)?;
+    let mut exclude_args = build_robocopy_exclude_arguments(&all_exclude_paths)?;
 
     let mut args = vec![
         source.display().to_string(),
@@ -68,7 +68,7 @@ fn run_backup_with_config(config: Configuration) -> anyhow::Result<String> {
         "/r:1".to_string(),
         "/w:1".to_string(),
         "/sl".to_string(),
-        r"/unilog:C:\temp\backup_robocopy.log".to_string(),
+        r"/unilog:C:\temp\simple_folder_sync_robocopy.log".to_string(),
     ];
     args.append(&mut exclude_args);
 
@@ -77,7 +77,7 @@ fn run_backup_with_config(config: Configuration) -> anyhow::Result<String> {
         .creation_flags(CREATE_NO_WINDOW)
         .output()?;
 
-    remove_ignored_files_and_folders_in_target(&source, &target, all_ignore_paths)?;
+    remove_excluded_files_and_folders_in_target(&source, &target, all_exclude_paths)?;
 
     let full_output = format!(
         "=== STDOUT ===\n{}\n=== STDERR ===\n{}",
@@ -101,19 +101,19 @@ fn read_config(config_path: &Path) -> anyhow::Result<Configuration> {
     Ok(config)
 }
 
-fn write_backup_result(backup_target: &Path, content: &str) -> anyhow::Result<()> {
-    let mut file = File::create(backup_target.join("last-backup-result.txt"))?;
+fn write_folder_sync_result(folder_sync_target: &Path, content: &str) -> anyhow::Result<()> {
+    let mut file = File::create(folder_sync_target.join("last-sync-result.txt"))?;
     file.write_all(content.as_bytes())?;
 
     Ok(())
 }
 
-fn collect_ignore_paths(
+fn collect_exclude_paths(
     source: &Path,
-    ignore_root_source_hidden_entries: bool,
-    additional_ignores: Vec<PathBuf>,
+    exclude_root_source_hidden_entries: bool,
+    exclude_paths: Vec<PathBuf>,
 ) -> anyhow::Result<Vec<PathBuf>> {
-    let hidden_entries: Vec<PathBuf> = if ignore_root_source_hidden_entries {
+    let hidden_entries: Vec<PathBuf> = if exclude_root_source_hidden_entries {
         list_dir_entries(source)?
             .into_iter()
             .filter(|e| is_hidden(&e.path()).unwrap_or(false))
@@ -124,34 +124,34 @@ fn collect_ignore_paths(
     };
 
     let mut all_entries = hidden_entries;
-    let mut additional_ignores = additional_ignores;
-    all_entries.append(&mut additional_ignores);
+    let mut exclude_paths = exclude_paths;
+    all_entries.append(&mut exclude_paths);
 
     Ok(all_entries)
 }
 
-fn build_robocopy_exclude_arguments(ignore_paths: &Vec<PathBuf>) -> anyhow::Result<Vec<String>> {
+fn build_robocopy_exclude_arguments(exclude_paths: &Vec<PathBuf>) -> anyhow::Result<Vec<String>> {
     let mut args = vec![];
 
-    let ignore_file_paths: Vec<String> = ignore_paths
+    let exclude_file_paths: Vec<String> = exclude_paths
         .iter()
         .filter(|e| e.is_file())
         .map(|e| e.display().to_string())
         .collect();
-    let ignore_folder_paths: Vec<String> = ignore_paths
+    let exclude_folder_paths: Vec<String> = exclude_paths
         .iter()
         .filter(|e| e.is_dir())
         .map(|e| e.display().to_string())
         .collect();
 
-    if !ignore_file_paths.is_empty() {
+    if !exclude_file_paths.is_empty() {
         args.push("/XF".to_string());
-        args.append(&mut ignore_file_paths.clone());
+        args.append(&mut exclude_file_paths.clone());
     }
 
-    if !ignore_folder_paths.is_empty() {
+    if !exclude_folder_paths.is_empty() {
         args.push("/XD".to_string());
-        args.append(&mut ignore_folder_paths.clone());
+        args.append(&mut exclude_folder_paths.clone());
     }
 
     Ok(args)
@@ -172,7 +172,7 @@ fn is_hidden(dir_entry: &Path) -> std::io::Result<bool> {
     Ok(attributes & FILE_ATTRIBUTE_HIDDEN > 0)
 }
 
-fn remove_ignored_files_and_folders_in_target(
+fn remove_excluded_files_and_folders_in_target(
     source: &Path,
     target: &Path,
     paths_to_delete: Vec<PathBuf>,
@@ -274,9 +274,9 @@ mod tests {
             &Configuration {
                 source: source_dir_path.display().to_string(),
                 target: target_dir_path.display().to_string(),
-                create_last_backup_result_file: false,
-                ignore_root_source_hidden_entries: false,
-                additional_ignores: vec![],
+                create_last_sync_result_file: false,
+                exclude_root_source_hidden_entries: false,
+                exclude_paths: vec![],
             },
         )
         .unwrap();
@@ -284,7 +284,7 @@ mod tests {
 
         // Actual call under test
         {
-            run_backup(&config_path).unwrap();
+            run_folder_sync(&config_path).unwrap();
         }
 
         // Assertions
@@ -304,7 +304,7 @@ mod tests {
     }
 
     #[test]
-    fn test_run_with_hidden_files_in_root_ignored() {
+    fn test_run_with_hidden_files_in_root_excluded() {
         let temp_dir = tempdir().expect("Failed to create a temp dir");
         let config_path = temp_dir.path().join("config.yaml");
         let source_dir_path: PathBuf = temp_dir.path().join("source");
@@ -315,9 +315,9 @@ mod tests {
             &Configuration {
                 source: source_dir_path.display().to_string(),
                 target: target_dir_path.display().to_string(),
-                create_last_backup_result_file: false,
-                ignore_root_source_hidden_entries: true,
-                additional_ignores: vec![],
+                create_last_sync_result_file: false,
+                exclude_root_source_hidden_entries: true,
+                exclude_paths: vec![],
             },
         )
         .unwrap();
@@ -325,7 +325,7 @@ mod tests {
 
         // Actual call under test
         {
-            run_backup(&config_path).unwrap();
+            run_folder_sync(&config_path).unwrap();
         }
 
         // Assertions
@@ -342,20 +342,20 @@ mod tests {
     }
 
     #[test]
-    fn test_create_ignore_paths() {
+    fn test_create_exclude_paths() {
         let temp_dir = tempdir().expect("Failed to create a temp dir");
         let source_dir_path: PathBuf = temp_dir.path().join("source");
 
         prepare_test_folder(&source_dir_path).unwrap();
 
-        let ignore_paths = collect_ignore_paths(
+        let exclude_paths = collect_exclude_paths(
             &source_dir_path,
             true,
             vec![source_dir_path.join("foobar.txt")],
         )
         .unwrap();
 
-        assert_that!(ignore_paths).contains_exactly(vec![
+        assert_that!(exclude_paths).contains_exactly(vec![
             source_dir_path.join("hidden-file1.txt"),
             source_dir_path.join("some-hidden-folder"),
             source_dir_path.join("foobar.txt"),
@@ -363,14 +363,14 @@ mod tests {
     }
 
     #[test]
-    fn test_create_ignore_paths_nothing_ignored() {
-        let ignore_paths = collect_ignore_paths(Path::new("/tmp/foo"), false, vec![]).unwrap();
+    fn test_create_excluce_paths_nothing_excluded() {
+        let exclude_paths = collect_exclude_paths(Path::new("/tmp/foo"), false, vec![]).unwrap();
 
-        assert_that!(ignore_paths).is_empty();
+        assert_that!(exclude_paths).is_empty();
     }
 
     #[test]
-    fn test_backup_result_file_written_to_target() {
+    fn test_folder_sync_result_file_written_to_target() {
         let temp_dir = tempdir().expect("Failed to create a temp dir");
         let config_path = temp_dir.path().join("config.yaml");
         let source_dir_path = temp_dir.path().join("source");
@@ -381,9 +381,9 @@ mod tests {
             &Configuration {
                 source: source_dir_path.display().to_string(),
                 target: target_dir_path.display().to_string(),
-                create_last_backup_result_file: true,
-                ignore_root_source_hidden_entries: false,
-                additional_ignores: vec![],
+                create_last_sync_result_file: true,
+                exclude_root_source_hidden_entries: false,
+                exclude_paths: vec![],
             },
         )
         .unwrap();
@@ -391,18 +391,18 @@ mod tests {
 
         // Actual call under test
         {
-            run_backup(&config_path).unwrap();
+            run_folder_sync(&config_path).unwrap();
         }
 
         // Assertions
         {
-            let backup_result_file = target_dir_path.join("last-backup-result.txt");
-            assert_that!(backup_result_file.exists()).is_true();
+            let folder_sync_result_file = target_dir_path.join("last-sync-result.txt");
+            assert_that!(folder_sync_result_file.exists()).is_true();
         }
     }
 
     #[test]
-    fn test_ignored_files_or_folders_get_deleted_on_target() {
+    fn test_excluded_files_or_folders_get_deleted_on_target() {
         let temp_dir = tempdir().expect("Failed to create a temp dir");
         let source_dir_path = temp_dir.path().join("source");
         let target_dir_path = temp_dir.path().join("target");
@@ -410,22 +410,22 @@ mod tests {
         let config = Configuration {
             source: source_dir_path.display().to_string(),
             target: target_dir_path.display().to_string(),
-            create_last_backup_result_file: false,
-            ignore_root_source_hidden_entries: false,
-            additional_ignores: vec![],
+            create_last_sync_result_file: false,
+            exclude_root_source_hidden_entries: false,
+            exclude_paths: vec![],
         };
         prepare_test_folder(&source_dir_path).unwrap();
 
         // Actual call under test
         {
-            run_backup_with_config(config.clone()).unwrap();
+            run_folder_sync_with_config(config.clone()).unwrap();
 
-            // Run again, but this time ignore hidden files
+            // Run again, but this time exclude hidden files
             let config = Configuration {
-                ignore_root_source_hidden_entries: true,
+                exclude_root_source_hidden_entries: true,
                 ..config
             };
-            run_backup_with_config(config).unwrap();
+            run_folder_sync_with_config(config).unwrap();
         }
 
         // Assertions
@@ -460,9 +460,9 @@ mod tests {
         let config = Configuration {
             source: r"C:\temp\source\".to_string(),
             target: r"C:\temp\target".to_string(),
-            create_last_backup_result_file: true,
-            ignore_root_source_hidden_entries: true,
-            additional_ignores: vec![r"C:/temp/source/some-folder/".to_string()],
+            create_last_sync_result_file: true,
+            exclude_root_source_hidden_entries: true,
+            exclude_paths: vec![r"C:/temp/source/some-folder/".to_string()],
         };
 
         store_config(&config_path, &config).unwrap();
@@ -491,7 +491,7 @@ mod tests {
 
         // Function under test
         {
-            remove_ignored_files_and_folders_in_target(&temp_dir, &temp_dir, paths_to_remove)
+            remove_excluded_files_and_folders_in_target(&temp_dir, &temp_dir, paths_to_remove)
                 .unwrap();
         }
 

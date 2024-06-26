@@ -5,54 +5,42 @@ to mirror one folder to another. The reason for this wrapper is to make the excl
 a little bit easier and narrow the program down to only syncing folders.
 
 
-## Limitations
-
-* Currently only Windows is supported
-
-
 ## Prerequisites
 
 * Robocopy (should acutally be available on every Windows machine)
 
 
+## Configuration
 
-## Development Notes
+The configuration of the Simple Folder Syncer is done via a configuration file exclusively. No CLI parameters are supported yet.
 
-A MSI file is produced to make it easier installable.
+The configuratoin file must be located under `%HOME%/folder_sync_config.yaml`
 
-### MSI Prerequisites
+The content of the file looks like this:
 
-This project uses the Windows Installer XML (WiX) Toolset for building MSI packages.
-The following tools are needed:
-
-* .Net SDK (https://learn.microsoft.com/en-us/dotnet/core/install/windows)
-* WiX Tools (https://wixtoolset.org/docs/intro/#msbuild)
-
-The tools can be installed with
-
-```powershell
-# Install .Net
-winget install Microsoft.DotNet.SDK.8
-
-# Install WiX
-dotnet tool install --global wix
+```yaml
+---
+source: C:\Users\foo
+target: Z:\
+create_last_sync_result_file: true
+exclude_root_source_hidden_entries: true
+exclude_paths:
+  - C:\Users\foo\Downloads
+  - C:\Users\foo\OneDrive
 ```
 
-Please note, that the cardo-wix plugin is not used because it is still besed
-on WiX 3. The used WiX version of this project is the latest WiX 5.
+| Field    | Description |
+| -------- | ------- |
+| source  | The directory which should be mirrored to the target. Only the content of the source is mirrored, not the directory iteslf.    |
+| target | The target directory where the content of the source directory should be mirrored to. |
+| exclude_root_source_hidden_entries    | If set to true, hidden entries in the root of the source directory are excluded from the sync. This does not affect hidden entries in any subdirectory of the source. |
+| create_last_sync_result_file    | If set to true, a file named `last_sync_result.txt` is created in the target directory. The file contains a summary of the last sync run |
+| exclude_paths    | A list of additional paths to be excluded from the sync. Currently, no support for wildcards is provided. Excluded paths will get deleted in the target. |
 
-### Create a new MSI
 
-```ps1
-# Building the MSI
-wix build .\package.wxs -o my.msi -arch x64
+## Limitations
 
-# Install an MSI and create the log for the installation process
-msiexec /i my.msi /l*v install.log
-
-# Unsinstall the MSI
-msiexec /x my.msi /l*v uninstall.log
-```
+* Currently only Windows is supported
 
 
 ## Contribution
