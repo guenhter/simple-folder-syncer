@@ -1,5 +1,5 @@
 <Wix xmlns="http://wixtoolset.org/schemas/v4/wxs">
-    <Package Name="Simple Folder Syncer" Manufacturer="Grill Günther" UpgradeCode="9e914e0d-014b-4a92-a147-755ad34dfc26" Version="0.1">
+    <Package Name="Simple Folder Syncer" Manufacturer="Grill Günther" UpgradeCode="9e914e0d-014b-4a92-a147-755ad34dfc26" Version="0.1.1">
         <Icon Id="icon.ico" SourceFile="resources\icon.ico"/>
         <Property Id="ARPPRODUCTICON" Value="icon.ico" />
         <Property Id="ARPNOMODIFY" Value="no" Secure="yes" />

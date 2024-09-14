@@ -1,7 +1,7 @@
 [package]
 description = "Small folder mirror tool for Windows using robocopy under the hood"
 name = "simple-folder-syncer"
-version = "0.1.0"
+version = "0.1.1"
 authors = ["Günther Grill <grill.guenther@gmail.com>"]
 license = "MIT"
 repository = "https://github.com/guenhter/robocopy-folder-mirror"
@@ -22,7 +22,6 @@ walkdir = "2.5.0"
 windows-sys = { version = "0.52.0", features = [
     "Win32_System_Threading",
     "Win32_Storage_FileSystem",
-
     "Wdk_Foundation",
     "Wdk_Storage_FileSystem",
     "Win32_Foundation",

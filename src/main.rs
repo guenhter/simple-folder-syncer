@@ -201,7 +201,7 @@ fn remove_excluded_files_and_folders_in_target(
     for entry in folders_to_delete {
         println!(" -- Removing {}", entry.display());
 
-        match remove_dir_all_alternative(entry) {
+        match fs::remove_dir_all(entry) {
             Ok(_) => {}
             Err(e) => {
                 println!("Error deleting folder {}", entry.display());
@@ -228,24 +228,6 @@ fn replace_root_path(
             Ok(new_root.join(relative_path))
         })
         .collect()
-}
-
-// https://github.com/rust-lang/rust/issues/126576
-// https://github.com/winfsp/winfsp/issues/561
-fn remove_dir_all_alternative(path: &Path) -> anyhow::Result<()> {
-    for entry in fs::read_dir(path)? {
-        let path = entry?.path();
-
-        if path.is_dir() {
-            remove_dir_all_alternative(&path)?;
-        } else {
-            fs::remove_file(path)?;
-        }
-    }
-
-    fs::remove_dir(path)?;
-
-    Ok(())
 }
 
 #[cfg(test)]
