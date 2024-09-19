@@ -43,6 +43,10 @@ exclude_paths:
 * Currently only Windows is supported
 
 
+## Kudos
+
+Thanks to https://uxwing.com/ for the free icons.
+
 ## Contribution
 
 Contribution are always welcome in any form.
